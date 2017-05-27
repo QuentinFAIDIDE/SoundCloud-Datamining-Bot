@@ -20,7 +20,7 @@ def searchForUser(client, name):
 ################################################################################
 
 ################################################################################
-def extractProfile(client, user, shortversion = False, custom_profile=None):
+def extractProfile(client, user, shortversion = False, custom_profile=None, tracklimit=250):
     end_page = False
     failcount = 0
     if custom_profile != None:
@@ -30,9 +30,12 @@ def extractProfile(client, user, shortversion = False, custom_profile=None):
         profile = {}
         len_beg = 0
     likes_href = ('users/' + str(user.id) + '/favorites' )
+    #likes_href = ('stop')
     comments_href = ('users/' + str(user.id) + '/comments' )
+    #comments_href = ('stop' )
     playlists_href = ('users/' + str(user.id) + '/playlists' )
     reposted_done = False
+    end_playlist = False
     print("Profiling " + user.username)
 
     while(not end_page):
@@ -71,8 +74,8 @@ def extractProfile(client, user, shortversion = False, custom_profile=None):
                 except:
                     failcount += 1
                     if failcount >5:
-                        end_page = True
-                        playlists = []
+                        end_playlist = True
+                        playlists_href = 'stop'
                         break
                     continue
                 break
@@ -86,7 +89,7 @@ def extractProfile(client, user, shortversion = False, custom_profile=None):
                 try:
                     reposts = client.get((
                                 'https://api-v2.soundcloud.com/profile/soundcloud:users:'
-                                + str(user.id) + '?limit=500'))
+                                + str(user.id) + '?limit=100'))
                 except:
                     print "Unexpected error:", sys.exc_info()[0]
                     continue
@@ -99,18 +102,18 @@ def extractProfile(client, user, shortversion = False, custom_profile=None):
 
 
         #processing playlists to extract tracks who are not from user
-        if end_page == False:
+        if end_page == False and playlists_href != 'stop' :
             for playlist in playlists.collection:
                 for track in playlist.tracks:
                     if track['user_id'] != user.id:
                         if user.username.lower() not in track['title'].lower():
                             if profile.has_key(str(track['id'])):
-                                profile[str(track['id'])] += 1
+                                profile[str(track['id'])] += 2
                             else:
-                                profile[str(track['id'])] = 1
+                                profile[str(track['id'])] = 2
 
         #processing all reposts to extract tracks who are not from user
-        if not reposted_done:
+        if (not reposted_done) and end_page == False:
             for tracks in reposts.collection:
                 if hasattr(tracks, 'track'):
                     if user.username.lower() not in tracks.track['title'].lower():
@@ -122,20 +125,22 @@ def extractProfile(client, user, shortversion = False, custom_profile=None):
 
         #processing all comments to get the tracks user commented
         #checking as always if they are not from him
-        for comment in comments.collection:
-            if profile.has_key(str(comment.track_id)):
-                profile[str(comment.track_id)] += 1
-            else:
-                profile[str(comment.track_id)] = 1
+        if comments_href != 'stop' and end_page == False:
+            for comment in comments.collection:
+                if profile.has_key(str(comment.track_id)):
+                    profile[str(comment.track_id)] += 1
+                else:
+                    profile[str(comment.track_id)] = 1
 
         #processing all likes to extract tracks who are not from user
-        for tracks in likes.collection:
-            if user.username.lower() not in tracks.title.lower():
-                if profile.has_key(str(tracks.id)):
-                    profile[str(tracks.id)] += 1
-                else:
-                    profile[str(tracks.id)] = 1
-        if (len(profile)-len_beg)>50 and shortversion==True: end_page = True
+        if end_page == False and likes_href != 'stop':
+                for tracks in likes.collection:
+                    if user.username.lower() not in tracks.title.lower():
+                        if profile.has_key(str(tracks.id)):
+                            profile[str(tracks.id)] += 1
+                        else:
+                            profile[str(tracks.id)] = 1
+        if (len(profile))>200 and shortversion==True: end_page = True
 
     #returning taste profile
     return profile
@@ -177,6 +182,8 @@ def profileFollowings(client, user, sorted=False):
     follow_href = ('users/' + str(user.id) + '/followings' )
     followers_profile = {}
     followings_count = 0
+    userprof = extractProfile(client, user)
+    cor = 0.0
     while not end_page:
         while True:
             try:
@@ -190,10 +197,23 @@ def profileFollowings(client, user, sorted=False):
         else:
             end_page = True
         for item in followings.collection:
-            buffer_profile = extractProfile(client, item, shortversion = True, custom_profile=followers_profile)
-        if(followings_count >500): end_page = True
+            buffer_profile = extractProfile(client, item, shortversion = True)
+            merge(followers_profile, buffer_profile)
+            if compare(buffer_profile, userprof) != 0:
+                merge(followers_profile, buffer_profile)
+                merge(followers_profile, buffer_profile)
+        if(followings_count >1000): end_page = True
 
         return followers_profile
+################################################################################
+
+################################################################################
+def merge(p1, p2):
+    for key in p2:
+        if p2.has_key(key) and p1.has_key(key):
+            p1[key] += p2[key]
+        else:
+            p1[key] = p2[key]
 ################################################################################
 
 ################################################################################
@@ -207,9 +227,22 @@ def linkFromId(client, id):
 ################################################################################
 
 ################################################################################
+def linksFromProfile(client, profile):
+    sorted_tuples = sorted(profile.items(), key=operator.itemgetter(1))
+    try:
+        track = client.get('tracks/' + id )
+        size = len(sorted_tuples)
+        listOfLinks = []
+    except:
+        print ("unable to link to track id: " + str(id))
+        return 'None'
+    return track.permalink_url
+################################################################################
+
+################################################################################
 def getSuggestionsFromProfile(client, profile, n=20):
     sorted_tuples = sorted(profile.items(), key=operator.itemgetter(1))
-    size = len(sorted_tuples)
+    size = len(profile)
     listOfLinks = []
     name = ''
     for i in range(1,n):
@@ -219,4 +252,21 @@ def getSuggestionsFromProfile(client, profile, n=20):
         else:
             n+=1
     return listOfLinks
+################################################################################
+
+################################################################################
+def printSuggestions(profilename):
+    actualclient = register()
+    user = searchForUser(actualclient, profilename)
+    profile = profileFollowings(actualclient, user)
+    suggestions = getSuggestionsFromProfile(actualclient, profile, 30)
+    print(profilename + " should like these tracks:")
+    for item in suggestions: print item
+
+def getSuggestions(profilename):
+    actualclient = register()
+    user = searchForUser(actualclient, profilename)
+    profile = profileFollowings(actualclient, user)
+    suggestions = getSuggestionsFromProfile(actualclient, profile, 30)
+    return suggestions
 ################################################################################

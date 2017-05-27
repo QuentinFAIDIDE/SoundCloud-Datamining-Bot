@@ -155,7 +155,6 @@ def compare(p1, p2):
         if item in p2: si[item]=1
 
     n=len(si)
-    print(n)
     if n==0: return 0
 
     sum1=sum([p1[it] for it in si])

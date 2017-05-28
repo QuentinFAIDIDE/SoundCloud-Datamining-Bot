@@ -20,7 +20,7 @@ def searchForUser(client, name):
 ################################################################################
 
 ################################################################################
-def extractProfile(client, user, shortversion = False, custom_profile=None, tracklimit=250):
+def extractProfile(client, user, shortversion = False, custom_profile=None, tracklimit=250, playlisting=True):
     end_page = False
     failcount = 0
     if custom_profile != None:
@@ -32,6 +32,8 @@ def extractProfile(client, user, shortversion = False, custom_profile=None, trac
     likes_href = ('users/' + str(user.id) + '/favorites' )
     comments_href = ('users/' + str(user.id) + '/comments' )
     playlists_href = ('users/' + str(user.id) + '/playlists' )
+    if playlisting == False:
+        playlists_href = 'stop'
     reposted_done = False
     end_playlist = False
     print("Profiling " + user.username)
@@ -138,7 +140,7 @@ def extractProfile(client, user, shortversion = False, custom_profile=None, trac
                             profile[str(tracks.id)] += 1
                         else:
                             profile[str(tracks.id)] = 1
-        if (len(profile))>200 and shortversion==True: end_page = True
+        if (len(profile))>tracklimit and shortversion==True: end_page = True
 
     #returning taste profile
     return profile
@@ -190,7 +192,6 @@ def compareCommonTracks(p1, p2):
 ################################################################################
 
 ################################################################################
-#Better never use this one (inneficient and long)
 def profileFollowings(client, user, sorted=False):
     end_page = False
     follow_href = ('users/' + str(user.id) + '/followings' )
@@ -222,9 +223,40 @@ def profileFollowings(client, user, sorted=False):
 ################################################################################
 
 ################################################################################
+def profileFollowingsShort(client, user, sorted=False):
+    end_page = False
+    follow_href = ('users/' + str(user.id) + '/followings' )
+    followers_profile = {}
+    followings_count = 0
+    userprof = extractProfile(client, user)
+    cor = 0.0
+    while not end_page:
+        while True:
+            try:
+                followings = client.get(follow_href, limit=100, linked_partitioning=1 )
+            except:
+                continue
+            break
+        followings_count += 100
+        if hasattr(followings, 'next_href'):
+            follow_href = followings.next_href
+        else:
+            end_page = True
+        for item in followings.collection:
+            buffer_profile = extractProfile(client, item, shortversion = True, tracklimit=50, playlisting = False)
+            merge(followers_profile, buffer_profile)
+            if comparePearson(buffer_profile, userprof) != 0:
+                merge(followers_profile, buffer_profile)
+                merge(followers_profile, buffer_profile)
+        if(followings_count >1000): end_page = True
+
+        return followers_profile
+################################################################################
+
+################################################################################
 def merge(p1, p2):
     for key in p2:
-        if p2.has_key(key) and p1.has_key(key):
+        if p1.has_key(key):
             p1[key] += p2[key]
         else:
             p1[key] = p2[key]
@@ -259,12 +291,16 @@ def getSuggestionsFromProfile(client, profile, n=20):
     size = len(profile)
     listOfLinks = []
     name = ''
-    for i in range(1,n):
-        name = linkFromId(client, sorted_tuples[size-i][0])
+    count = 0
+    fakecount = 0
+    while fakecount != n :
+        name = linkFromId(client, sorted_tuples[size-1-count][0])
         if name != 'None':
             listOfLinks.append(name)
+            fakecount += 1
+            count += 1
         else:
-            n+=1
+            count += 1
     return listOfLinks
 ################################################################################
 
@@ -276,7 +312,9 @@ def printSuggestions(profilename):
     suggestions = getSuggestionsFromProfile(actualclient, profile, 30)
     print(profilename + " should like these tracks:")
     for item in suggestions: print item
+################################################################################
 
+################################################################################
 def getSuggestions(profilename):
     actualclient = register()
     user = searchForUser(actualclient, profilename)

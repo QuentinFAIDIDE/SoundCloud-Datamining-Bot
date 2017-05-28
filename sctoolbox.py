@@ -1,6 +1,9 @@
 import SCDB
 import sys
+import os
+import signal
 
+###################################################################################################
 def main(args):
     def usage():
         print >>sys.stderr, "Usage:"
@@ -18,9 +21,10 @@ def main(args):
 
     client = SCDB.register()
 
-    if len(args) == 4 and args[1] == 'correlates' and args[2] == 'pearson_tastes':
-        user1 = SCDB.searchForUser(client, args[2])
-        user2 = SCDB.searchForUser(client, args[3])
+    ##############################################################################
+    if len(args) == 5 and args[1] == 'correlates' and args[2] == 'pearson_tastes':
+        user1 = SCDB.searchForUser(client, args[3])
+        user2 = SCDB.searchForUser(client, args[4])
 
         puser1 = SCDB.extractProfile(client, user1)
         puser2 = SCDB.extractProfile(client, user2)
@@ -28,11 +32,12 @@ def main(args):
         r = SCDB.comparePearson(puser1, puser2)
 
         print 'Correlation score between users (pearson):', r
+    ##############################################################################
 
-
-    elif len(args) == 4 and args[1] == 'correlates' and args[2] == 'common_tracks':
-        user1 = SCDB.searchForUser(client, args[2])
-        user2 = SCDB.searchForUser(client, args[3])
+    ##############################################################################
+    elif len(args) == 5 and args[1] == 'correlates' and args[2] == 'common_tracks':
+        user1 = SCDB.searchForUser(client, args[3])
+        user2 = SCDB.searchForUser(client, args[4])
 
         puser1 = SCDB.extractProfile(client, user1)
         puser2 = SCDB.extractProfile(client, user2)
@@ -40,9 +45,46 @@ def main(args):
         r = SCDB.compareCommonTracks(puser1, puser2)
 
         print 'Correlation score between users (common tracks):', r
+    ##############################################################################
+
+    ##############################################################################
+    elif len(args) == 5 and args[1] == 'suggest' and args[3] == 'following_tournament':
+        print('Launching tournament between tracks from followings, might take a while...')
+        user = SCDB.searchForUser(client, args[2])
+        profile = SCDB.profileFollowings(client, user)
+        suggestions = SCDB.getSuggestionsFromProfile(client, profile, int(args[4]))
+        print(args[2] + " should like these tracks:")
+        for item in suggestions: print item
+    ##############################################################################
+
+    ##############################################################################
+    elif len(args) == 5 and args[1] == 'suggest' and args[3] == 'following_tournament_short':
+        print('Launching short tournament between tracks from followings...')
+        user = SCDB.searchForUser(client, args[2])
+        profile = SCDB.profileFollowings(client, user)
+        suggestions = SCDB.getSuggestionsFromProfile(client, profile, int(args[4]))
+        print(args[2] + " should like these tracks:")
+        for item in suggestions: print item
+    ##############################################################################
+
+    ##############################################################################
+    ##############################################################################
+
+    ##############################################################################
+    ##############################################################################
+
+    ##############################################################################
+    ##############################################################################
+
+    ##############################################################################
+    ##############################################################################
+
+    ##############################################################################
+    ##############################################################################
 
     else:
         usage()
 
-if __name__ == "__main__":
+###################################################################################################
+if __name__ == '__main__':
     main(sys.argv)

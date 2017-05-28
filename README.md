@@ -1,9 +1,9 @@
 # SCTOOLBOX
-#What ?
+# What ?
 A toolbox to mine data from soundcloud, make tracks suggestions, analyse the
 correlation between users and their tastes, and analyse track data for example
 by giving a success score.
-#How ?
+# How ?
 
 sctoolbox correlates common_tracks [user1] [user2] <br />
 sctoolbox correlates pearson_tastes [user1] [user2] <br />
@@ -16,7 +16,7 @@ sctoolbox getTrackScore [trackname] <br />
 sctoolbox similar [trackname] <br />
 
 
-#IMPORTANT
+# IMPORTANT
 Not all functions are implemented, and more is to come, and you might find some bug. <br />
 You can make suggestions and analyse correlations between users. Downloading and processing
 the data might take some time if you try to make suggestions.

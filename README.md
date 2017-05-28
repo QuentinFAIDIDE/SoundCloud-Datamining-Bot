@@ -17,6 +17,6 @@ sctoolbox similar [trackname] <br />
 
 
 # IMPORTANT
-Not all functions are implemented, and more is to come, and you might find some bug. <br />
+Not all functions are implemented yet, more is to come, and you might find some bugs. <br />
 You can make suggestions and analyse correlations between users. Downloading and processing
 the data might take some time if you try to make suggestions.

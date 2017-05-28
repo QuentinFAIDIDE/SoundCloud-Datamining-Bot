@@ -30,9 +30,7 @@ def extractProfile(client, user, shortversion = False, custom_profile=None, trac
         profile = {}
         len_beg = 0
     likes_href = ('users/' + str(user.id) + '/favorites' )
-    #likes_href = ('stop')
     comments_href = ('users/' + str(user.id) + '/comments' )
-    #comments_href = ('stop' )
     playlists_href = ('users/' + str(user.id) + '/playlists' )
     reposted_done = False
     end_playlist = False
@@ -149,7 +147,7 @@ def extractProfile(client, user, shortversion = False, custom_profile=None, trac
 ################################################################################
 #PEARSON CORRELATION SCORE
 #compare correlation between p1 and p2 critics and ignore grade inflation
-def compare(p1, p2):
+def comparePearson(p1, p2):
     si={}
     for item in p1:
         if item in p2: si[item]=1
@@ -172,6 +170,23 @@ def compare(p1, p2):
     r=covariance/stdDev
 
     return r
+################################################################################
+
+################################################################################
+#PEARSON CORRELATION SCORE
+#compare correlation between p1 and p2 critics and ignore grade inflation
+def compareCommonTracks(p1, p2):
+    si={}
+    for item in p1:
+        if item in p2: si[item]=1
+
+    n=len(si)
+    if n==0: return 0
+
+    score = ((float(len(si)) / float(len(p1))) + (float(len(si)) / float(len(p2))))/2.0
+
+
+    return score
 ################################################################################
 
 ################################################################################
@@ -198,7 +213,7 @@ def profileFollowings(client, user, sorted=False):
         for item in followings.collection:
             buffer_profile = extractProfile(client, item, shortversion = True)
             merge(followers_profile, buffer_profile)
-            if compare(buffer_profile, userprof) != 0:
+            if comparePearson(buffer_profile, userprof) != 0:
                 merge(followers_profile, buffer_profile)
                 merge(followers_profile, buffer_profile)
         if(followings_count >1000): end_page = True

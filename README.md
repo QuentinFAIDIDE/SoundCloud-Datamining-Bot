@@ -16,7 +16,7 @@ sctoolbox getTrackScore [trackname] <br />
 sctoolbox similar [trackname] <br />
 
 
-# IMPORTANT
+# Important
 Not all functions are implemented yet, more is to come, and you might find some bugs. <br />
 You can make suggestions and analyse correlations between users. Downloading and processing
 the data might take some time if you try to make suggestions.

@@ -220,7 +220,6 @@ def profileFollowings(client, user, sorted=False):
             end_page = True
         for item in followings.collection:
             buffer_profile = extractProfile(client, item, shortversion = True)
-            print(followings_count)
             merge(followers_profile, buffer_profile)
             if comparePearson(buffer_profile, userprof) != 0:
                 merge(followers_profile, buffer_profile)

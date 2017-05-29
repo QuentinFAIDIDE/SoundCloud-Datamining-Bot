@@ -20,7 +20,7 @@ def searchForUser(client, name):
 ################################################################################
 
 ################################################################################
-def extractProfile(client, user, shortversion = False, custom_profile=None, tracklimit=250, playlisting=True):
+def extractProfile(client, user, shortversion = False, custom_profile=None, tracklimit=200, playlisting=True):
     end_page = False
     failcount = 0
     if custom_profile != None:
@@ -71,6 +71,10 @@ def extractProfile(client, user, shortversion = False, custom_profile=None, trac
                 try:
                     playlists = client.get(playlists_href , limit=100, linked_partitioning=1 )
                     failcount = 0
+                    if hasattr(playlists, 'next_href'):
+                        playlists_href = playlists.next_href
+                    else:
+                        playlists_href = 'stop'
                 except:
                     failcount += 1
                     if failcount >5:
@@ -79,10 +83,7 @@ def extractProfile(client, user, shortversion = False, custom_profile=None, trac
                         break
                     continue
                 break
-            if hasattr(playlists, 'next_href'):
-                playlists_href = playlists.next_href
-            else:
-                playlists_href = 'stop'
+
 
         if not reposted_done:
             while True:
@@ -199,11 +200,17 @@ def profileFollowings(client, user, sorted=False):
     followings_count = 0
     userprof = extractProfile(client, user)
     cor = 0.0
+    failcount = 0
     while not end_page:
         while True:
             try:
                 followings = client.get(follow_href, limit=100, linked_partitioning=1 )
+                failcount = 0
             except:
+                failcount += 1
+                if failcount >5:
+                    end_page = True
+                    break
                 continue
             break
         followings_count += 100
@@ -213,13 +220,13 @@ def profileFollowings(client, user, sorted=False):
             end_page = True
         for item in followings.collection:
             buffer_profile = extractProfile(client, item, shortversion = True)
+            print(followings_count)
             merge(followers_profile, buffer_profile)
             if comparePearson(buffer_profile, userprof) != 0:
                 merge(followers_profile, buffer_profile)
-                merge(followers_profile, buffer_profile)
-        if(followings_count >1000): end_page = True
+        if(followings_count >=1000): end_page = True
 
-        return followers_profile
+    return followers_profile
 ################################################################################
 
 ################################################################################
@@ -230,11 +237,17 @@ def profileFollowingsShort(client, user, sorted=False):
     followings_count = 0
     userprof = extractProfile(client, user)
     cor = 0.0
+    failcount = 0
     while not end_page:
         while True:
             try:
                 followings = client.get(follow_href, limit=100, linked_partitioning=1 )
+                failcount = 0
             except:
+                failcount += 1
+                if failcount >5:
+                    end_page = True
+                    break
                 continue
             break
         followings_count += 100
@@ -247,10 +260,9 @@ def profileFollowingsShort(client, user, sorted=False):
             merge(followers_profile, buffer_profile)
             if comparePearson(buffer_profile, userprof) != 0:
                 merge(followers_profile, buffer_profile)
-                merge(followers_profile, buffer_profile)
-        if(followings_count >500): end_page = True
+        if(followings_count >=500): end_page = True
 
-        return followers_profile
+    return followers_profile
 ################################################################################
 
 ################################################################################

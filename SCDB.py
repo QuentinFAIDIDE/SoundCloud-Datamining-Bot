@@ -286,11 +286,13 @@ def merge(p1, p2):
 ################################################################################
 
 ################################################################################
-def linkFromId(client, id):
+def linkFromId(client, id, no_mix=False):
     try:
         track = client.get('tracks/' + id )
     except:
         print ("unable to link to track id: " + str(id))
+        return 'None'
+    if track.duration > 900000 and no_mix:
         return 'None'
     return track.permalink_url
 ################################################################################

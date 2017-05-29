@@ -12,6 +12,7 @@ def main(args):
         print >>sys.stderr, "sctoolbox suggest [user] following_tournament [n]"
         print >>sys.stderr, "sctoolbox suggest [user] following_tournament_short [n]"
         print >>sys.stderr, "sctoolbox suggest [user] following_tournament_filter_mainstream [n]"
+        print >>sys.stderr, "sctoolbox suggest [user] following_tournament_custom [n]"
         print >>sys.stderr, "sctoolbox searchUser [username]"
         print >>sys.stderr, "sctoolbox searchTrack [trackname]"
         print >>sys.stderr, "sctoolbox getTrackScore [trackname]"
@@ -67,6 +68,17 @@ def main(args):
         for item in suggestions: print item
     ##############################################################################
 
+    ##############################################################################
+    elif len(args) == 3 and args[1] == 'searchUser':
+        container = client.get('/users', q=args[2])
+        n=1
+        for item in container:
+            print('############################')
+            print('#'+str(n))
+            n+=1
+            print('username:' + item.username)
+            print('permalink:' + item.permalink)
+        print('############################')
     ##############################################################################
     ##############################################################################
 

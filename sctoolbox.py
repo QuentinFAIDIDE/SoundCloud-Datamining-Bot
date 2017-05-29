@@ -11,7 +11,8 @@ def main(args):
         print >>sys.stderr, "sctoolbox correlates pearson_tastes [user1] [user2]"
         print >>sys.stderr, "sctoolbox suggest [user] following_tournament [n]"
         print >>sys.stderr, "sctoolbox suggest [user] following_tournament_short [n]"
-        print >>sys.stderr, "sctoolbox suggest [user] following_tournament_filter_mainstream [n]"
+        print >>sys.stderr, "sctoolbox suggest [user] following_tournament [n] --nomix"
+        print >>sys.stderr, "sctoolbox suggest [user] following_tournament_short [n] --nomix"
         print >>sys.stderr, "sctoolbox suggest [user] following_tournament_custom [n]"
         print >>sys.stderr, "sctoolbox searchUser [username]"
         print >>sys.stderr, "sctoolbox searchTrack [trackname]"
@@ -69,6 +70,26 @@ def main(args):
     ##############################################################################
 
     ##############################################################################
+elif len(args) == 6 and args[1] == 'suggest' and args[3] == 'following_tournament' and args[5] == '--nomix':
+        print('Launching tournament between tracks from followings, might take a while...')
+        user = SCDB.searchForUser(client, args[2])
+        profile = SCDB.profileFollowings(client, user)
+        suggestions = SCDB.getSuggestionsFromProfile(client, profile, int(args[4]), no_mix = True)
+        print(args[2] + " should like these tracks:")
+        for item in suggestions: print item
+    ##############################################################################
+
+    ##############################################################################
+elif len(args) == 6 and args[1] == 'suggest' and args[3] == 'following_tournament_short' and args[5] == '--nomix':
+        print('Launching short tournament between tracks from followings...')
+        user = SCDB.searchForUser(client, args[2])
+        profile = SCDB.profileFollowingsShort(client, user)
+        suggestions = SCDB.getSuggestionsFromProfile(client, profile, int(args[4]), no_mix=True)
+        print(args[2] + " should like these tracks:")
+        for item in suggestions: print item
+    ##############################################################################
+
+    ##############################################################################
     elif len(args) == 3 and args[1] == 'searchUser':
         container = client.get('/users', q=args[2])
         n=1
@@ -79,7 +100,6 @@ def main(args):
             print('username:' + item.username)
             print('permalink:' + item.permalink)
         print('############################')
-    ##############################################################################
     ##############################################################################
 
     ##############################################################################

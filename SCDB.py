@@ -107,7 +107,7 @@ def extractProfile(client, user, shortversion = False, custom_profile=None, trac
             for playlist in playlists.collection:
                 for track in playlist.tracks:
                     if track['user_id'] != user.id:
-                        if user.username.lower() not in track['title'].lower():
+                        if user.username.lower() not in track['title'].lower:
                             if profile.has_key(str(track['id'])):
                                 profile[str(track['id'])] += 2
                             else:
@@ -218,7 +218,7 @@ def profileFollowings(client, user):
         #followings_count += 100
         if hasattr(followings, 'next_href'):
             follow_href = followings.next_href
-            
+
         for item in followings.collection:
             if end_page == False:
                 followings_count +=1
@@ -305,11 +305,13 @@ def linksFromProfile(client, profile):
     except:
         print ("unable to link to track id: " + str(id))
         return 'None'
+    if track.duration > 900000:
+        return 'None'
     return track.permalink_url
 ################################################################################
 
 ################################################################################
-def getSuggestionsFromProfile(client, profile, n=20):
+def getSuggestionsFromProfile(client, profile, n=20, no_mix=False):
     sorted_tuples = sorted(profile.items(), key=operator.itemgetter(1))
     size = len(profile)
     listOfLinks = []
@@ -317,7 +319,7 @@ def getSuggestionsFromProfile(client, profile, n=20):
     count = 0
     fakecount = 0
     while fakecount != n :
-        name = linkFromId(client, sorted_tuples[size-1-count][0])
+        name = linkFromId(client, sorted_tuples[size-1-count][0], no_mix)
         if name != 'None':
             listOfLinks.append(name)
             fakecount += 1

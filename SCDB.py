@@ -248,7 +248,7 @@ def profileFollowingsShort(client, user, sorted=False):
             if comparePearson(buffer_profile, userprof) != 0:
                 merge(followers_profile, buffer_profile)
                 merge(followers_profile, buffer_profile)
-        if(followings_count >1000): end_page = True
+        if(followings_count >500): end_page = True
 
         return followers_profile
 ################################################################################

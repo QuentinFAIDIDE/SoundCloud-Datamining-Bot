@@ -62,7 +62,6 @@ def main(args):
         print('Launching short tournament between tracks from followings...')
         user = SCDB.searchForUser(client, args[2])
         profile = SCDB.profileFollowingsShort(client, user)
-        print("another test")
         suggestions = SCDB.getSuggestionsFromProfile(client, profile, int(args[4]))
         print(args[2] + " should like these tracks:")
         for item in suggestions: print item

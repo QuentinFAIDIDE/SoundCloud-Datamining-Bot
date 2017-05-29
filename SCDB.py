@@ -193,7 +193,7 @@ def compareCommonTracks(p1, p2):
 ################################################################################
 
 ################################################################################
-def profileFollowings(client, user, sorted=False):
+def profileFollowings(client, user):
     end_page = False
     follow_href = ('users/' + str(user.id) + '/followings' )
     followers_profile = {}
@@ -201,6 +201,9 @@ def profileFollowings(client, user, sorted=False):
     userprof = extractProfile(client, user)
     cor = 0.0
     failcount = 0
+    folcount = user.followings_count
+    if folcount > 1000: folcount = 1000
+    if folcount == 0: end_page = True
     while not end_page:
         while True:
             try:
@@ -209,27 +212,28 @@ def profileFollowings(client, user, sorted=False):
             except:
                 failcount += 1
                 if failcount >5:
-                    end_page = True
                     break
                 continue
             break
-        followings_count += 100
+        #followings_count += 100
         if hasattr(followings, 'next_href'):
             follow_href = followings.next_href
-        else:
-            end_page = True
+            
         for item in followings.collection:
-            buffer_profile = extractProfile(client, item, shortversion = True)
-            merge(followers_profile, buffer_profile)
-            if comparePearson(buffer_profile, userprof) != 0:
+            if end_page == False:
+                followings_count +=1
+                print('Progression: ' + str(int((float(followings_count)/float(folcount))*100.0)) + '%')
+                buffer_profile = extractProfile(client, item, shortversion = True)
                 merge(followers_profile, buffer_profile)
-        if(followings_count >=1000): end_page = True
+                if comparePearson(buffer_profile, userprof) != 0:
+                    merge(followers_profile, buffer_profile)
+                if(followings_count >= folcount): end_page = True
 
     return followers_profile
 ################################################################################
 
 ################################################################################
-def profileFollowingsShort(client, user, sorted=False):
+def profileFollowingsShort(client, user):
     end_page = False
     follow_href = ('users/' + str(user.id) + '/followings' )
     followers_profile = {}
@@ -237,29 +241,37 @@ def profileFollowingsShort(client, user, sorted=False):
     userprof = extractProfile(client, user)
     cor = 0.0
     failcount = 0
-    while not end_page:
-        while True:
+    folcount = user.followings_count
+    if folcount > 300: folcount = 300
+    if folcount == 0: end_page = True
+    while end_page==False:
+        while end_page==False:
             try:
-                followings = client.get(follow_href, limit=100, linked_partitioning=1 )
+                followings = client.get(follow_href, limit=50, linked_partitioning=1 )
                 failcount = 0
             except:
                 failcount += 1
                 if failcount >5:
-                    end_page = True
                     break
                 continue
             break
-        followings_count += 100
+        #followings_count += 100
         if hasattr(followings, 'next_href'):
             follow_href = followings.next_href
         else:
             end_page = True
         for item in followings.collection:
-            buffer_profile = extractProfile(client, item, shortversion = True, tracklimit=50, playlisting = False)
-            merge(followers_profile, buffer_profile)
-            if comparePearson(buffer_profile, userprof) != 0:
+            if end_page == False:
+                followings_count +=1
+                print('Progression: ' + str(int((float(followings_count)/float(folcount))*100.0)) + '%')
+                buffer_profile = extractProfile(client, item, shortversion = True, tracklimit=50, playlisting = False)
                 merge(followers_profile, buffer_profile)
-        if(followings_count >=500): end_page = True
+                if comparePearson(buffer_profile, userprof) != 0:
+                    merge(followers_profile, buffer_profile)
+                if followings_count >= folcount :
+                    end_page = True
+                    print(folcount)
+                    print(followings_count)
 
     return followers_profile
 ################################################################################

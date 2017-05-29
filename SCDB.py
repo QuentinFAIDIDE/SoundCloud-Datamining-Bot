@@ -107,7 +107,7 @@ def extractProfile(client, user, shortversion = False, custom_profile=None, trac
             for playlist in playlists.collection:
                 for track in playlist.tracks:
                     if track['user_id'] != user.id:
-                        if user.username.lower() not in track['title'].lower:
+                        if user.username.lower() not in track['title'].lower():
                             if profile.has_key(str(track['id'])):
                                 profile[str(track['id'])] += 2
                             else:

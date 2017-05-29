@@ -70,7 +70,7 @@ def main(args):
     ##############################################################################
 
     ##############################################################################
-elif len(args) == 6 and args[1] == 'suggest' and args[3] == 'following_tournament' and args[5] == '--nomix':
+    elif len(args) == 6 and args[1] == 'suggest' and args[3] == 'following_tournament' and args[5] == '--nomix':
         print('Launching tournament between tracks from followings, might take a while...')
         user = SCDB.searchForUser(client, args[2])
         profile = SCDB.profileFollowings(client, user)

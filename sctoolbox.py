@@ -13,7 +13,8 @@ def main(args):
         print >>sys.stderr, "sctoolbox suggest [user] following_tournament_short [n]"
         print >>sys.stderr, "sctoolbox suggest [user] following_tournament [n] --nomix"
         print >>sys.stderr, "sctoolbox suggest [user] following_tournament_short [n] --nomix"
-        print >>sys.stderr, "sctoolbox suggest [user] following_tournament_custom [n]"
+        print >>sys.stderr, "sctoolbox suggest [user] following_tournament_custom [n] --nomix [playlimit]"
+        print >>sys.stderr, "sctoolbox suggest [user] following_tournament_custom [n] [playlimit]"
         print >>sys.stderr, "sctoolbox searchUser [username]"
         print >>sys.stderr, "sctoolbox searchTrack [trackname]"
         print >>sys.stderr, "sctoolbox getTrackScore [trackname]"
@@ -85,6 +86,26 @@ def main(args):
         user = SCDB.searchForUser(client, args[2])
         profile = SCDB.profileFollowingsShort(client, user)
         suggestions = SCDB.getSuggestionsFromProfile(client, profile, int(args[4]), no_mix=True)
+        print(args[2] + " should like these tracks:")
+        for item in suggestions: print item
+    ##############################################################################
+
+    ##############################################################################
+    elif len(args) == 7 and args[1] == 'suggest' and args[3] == 'following_tournament_custom' and args[5] == '--nomix':
+        print('Launching short tournament between tracks from followings...')
+        user = SCDB.searchForUser(client, args[2])
+        profile = SCDB.profileFollowings(client, user)
+        suggestions = SCDB.getSuggestionsFromProfile(client, profile, int(args[4]), no_mix=True, played_limit=int(args[6]))
+        print(args[2] + " should like these tracks:")
+        for item in suggestions: print item
+    ##############################################################################
+
+    ##############################################################################
+    elif len(args) == 6 and args[1] == 'suggest' and args[3] == 'following_tournament_custom':
+        print('Launching short tournament between tracks from followings...')
+        user = SCDB.searchForUser(client, args[2])
+        profile = SCDB.profileFollowings(client, user)
+        suggestions = SCDB.getSuggestionsFromProfile(client, profile, int(args[4]), no_mix=False, played_limit=int(args[5]))
         print(args[2] + " should like these tracks:")
         for item in suggestions: print item
     ##############################################################################

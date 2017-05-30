@@ -286,13 +286,15 @@ def merge(p1, p2):
 ################################################################################
 
 ################################################################################
-def linkFromId(client, id, no_mix=False):
+def linkFromId(client, id, no_mix=False, played_limit = 1000000):
     try:
         track = client.get('tracks/' + id )
     except:
         print ("unable to link to track id: " + str(id))
         return 'None'
     if track.duration > 900000 and no_mix:
+        return 'None'
+    if track.playback_count > played_limit:
         return 'None'
     return track.permalink_url
 ################################################################################
@@ -313,7 +315,7 @@ def linksFromProfile(client, profile):
 ################################################################################
 
 ################################################################################
-def getSuggestionsFromProfile(client, profile, n=20, no_mix=False):
+def getSuggestionsFromProfile(client, profile, n=20, no_mix=False, played_limit = 1000000):
     sorted_tuples = sorted(profile.items(), key=operator.itemgetter(1))
     size = len(profile)
     listOfLinks = []
@@ -321,7 +323,7 @@ def getSuggestionsFromProfile(client, profile, n=20, no_mix=False):
     count = 0
     fakecount = 0
     while fakecount != n :
-        name = linkFromId(client, sorted_tuples[size-1-count][0], no_mix)
+        name = linkFromId(client, sorted_tuples[size-1-count][0], no_mix, played_limit)
         if name != 'None':
             listOfLinks.append(name)
             fakecount += 1
@@ -349,3 +351,32 @@ def getSuggestions(profilename):
     suggestions = getSuggestionsFromProfile(actualclient, profile, 30)
     return suggestions
 ################################################################################
+
+################################################################################
+'''def getMostActiveUser(client, user):
+    n_user_tracks = user.track_count
+    do_continue = True
+    while do_continue and n_user_tracks != 0:
+        while True:
+            try:
+                tracks = client.get(tracks_href, limit=100, linked_partitioning=1 )
+                fail_number = 0
+                if(hasattr(tracks, 'next_href'):
+                    tracks_href = tracks.next_href
+                else:
+                    do_continue = False
+            except:
+                fail_number +=1
+                print "Unexpected error:", sys.exc_info()[0]
+                if(fail_number > 4):
+                    do_continue = False
+                    error_happened = True
+                    break
+                continue
+            break
+
+        for item in tracks.collection:
+            print "gonthru"
+
+################################################################################
+'''

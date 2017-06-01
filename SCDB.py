@@ -109,9 +109,9 @@ def extractProfile(client, user, shortversion = False, custom_profile=None, trac
                     if track['user_id'] != user.id:
                         if user.username.lower() not in track['title'].lower():
                             if profile.has_key(str(track['id'])):
-                                profile[str(track['id'])] += 2
+                                profile[str(track['id'])] += 2.0
                             else:
-                                profile[str(track['id'])] = 2
+                                profile[str(track['id'])] = 2.0
 
         #processing all reposts to extract tracks who are not from user
         if (not reposted_done) and end_page == False:
@@ -119,9 +119,9 @@ def extractProfile(client, user, shortversion = False, custom_profile=None, trac
                 if hasattr(tracks, 'track'):
                     if user.username.lower() not in tracks.track['title'].lower():
                         if profile.has_key(str(tracks.track['id'])):
-                            profile[str(tracks.track['id'])] += 1
+                            profile[str(tracks.track['id'])] += 2.0
                         else:
-                            profile[str(tracks.track['id'])] = 1
+                            profile[str(tracks.track['id'])] = 2.0
             reposted_done = True
 
         #processing all comments to get the tracks user commented
@@ -129,18 +129,18 @@ def extractProfile(client, user, shortversion = False, custom_profile=None, trac
         if comments_href != 'stop' and end_page == False:
             for comment in comments.collection:
                 if profile.has_key(str(comment.track_id)):
-                    profile[str(comment.track_id)] += 1
+                    profile[str(comment.track_id)] += 2.0
                 else:
-                    profile[str(comment.track_id)] = 1
+                    profile[str(comment.track_id)] = 2.0
 
         #processing all likes to extract tracks who are not from user
         if end_page == False and likes_href != 'stop':
                 for tracks in likes.collection:
                     if user.username.lower() not in tracks.title.lower():
                         if profile.has_key(str(tracks.id)):
-                            profile[str(tracks.id)] += 1
+                            profile[str(tracks.id)] += 1.0
                         else:
-                            profile[str(tracks.id)] = 1
+                            profile[str(tracks.id)] = 1.0
         if (len(profile))>tracklimit and shortversion==True: end_page = True
 
     #returning taste profile
@@ -201,6 +201,7 @@ def profileFollowings(client, user):
     userprof = extractProfile(client, user)
     cor = 0.0
     failcount = 0
+    r= 0.0
     folcount = user.followings_count
     if folcount > 1000: folcount = 1000
     if folcount == 0: end_page = True
@@ -224,9 +225,10 @@ def profileFollowings(client, user):
                 followings_count +=1
                 print('Progression: ' + str(int((float(followings_count)/float(folcount))*100.0)) + '%')
                 buffer_profile = extractProfile(client, item, shortversion = True)
-                merge(followers_profile, buffer_profile)
-                if comparePearson(buffer_profile, userprof) != 0:
-                    merge(followers_profile, buffer_profile)
+                #merge(followers_profile, buffer_profile)
+                r = comparePearson(buffer_profile, userprof)
+                if r != 0:
+                    merge(followers_profile, buffer_profile, r)
                 if(followings_count >= folcount): end_page = True
 
     return followers_profile
@@ -241,6 +243,7 @@ def profileFollowingsShort(client, user):
     userprof = extractProfile(client, user)
     cor = 0.0
     failcount = 0
+    r = 0
     folcount = user.followings_count
     if folcount > 300: folcount = 300
     if folcount == 0: end_page = True
@@ -265,24 +268,23 @@ def profileFollowingsShort(client, user):
                 followings_count +=1
                 print('Progression: ' + str(int((float(followings_count)/float(folcount))*100.0)) + '%')
                 buffer_profile = extractProfile(client, item, shortversion = True, tracklimit=50, playlisting = False)
-                merge(followers_profile, buffer_profile)
-                if comparePearson(buffer_profile, userprof) != 0:
-                    merge(followers_profile, buffer_profile)
+                #merge(followers_profile, buffer_profile)
+                r = comparePearson(buffer_profile, userprof)
+                if r != 0:
+                    merge(followers_profile, buffer_profile, r)
                 if followings_count >= folcount :
                     end_page = True
-                    print(folcount)
-                    print(followings_count)
 
     return followers_profile
 ################################################################################
 
 ################################################################################
-def merge(p1, p2):
+def merge(p1, p2, r=1):
     for key in p2:
         if p1.has_key(key):
-            p1[key] += p2[key]
+            p1[key] += p2[key]*r
         else:
-            p1[key] = p2[key]
+            p1[key] = p2[key]*r
 ################################################################################
 
 ################################################################################
@@ -292,9 +294,14 @@ def linkFromId(client, id, no_mix=False, played_limit = 1000000):
     except:
         print ("unable to link to track id: " + str(id))
         return 'None'
-    if track.duration > 900000 and no_mix:
+
+    if (track.duration > 900000 and no_mix):
         return 'None'
-    if track.playback_count > played_limit:
+
+    if hasattr(track, 'playback_count') and no_mix:
+        if (track.playback_count > played_limit):
+            return 'None'
+    else:
         return 'None'
     return track.permalink_url
 ################################################################################
@@ -309,7 +316,8 @@ def linksFromProfile(client, profile):
     except:
         print ("unable to link to track id: " + str(id))
         return 'None'
-    if track.duration > 900000:
+    l = track.duration
+    if(l > 900000):
         return 'None'
     return track.permalink_url
 ################################################################################

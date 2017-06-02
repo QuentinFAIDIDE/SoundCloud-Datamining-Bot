@@ -177,7 +177,7 @@ def comparePearson(p1, p2):
 
 ################################################################################
 #PEARSON CORRELATION SCORE
-#compare correlation between p1 and p2 critics and ignore grade inflation
+#compare correlation between p1 and p2 critics
 def compareCommonTracks(p1, p2):
     si={}
     for item in p1:
@@ -226,7 +226,7 @@ def profileFollowings(client, user):
                 print('Progression: ' + str(int((float(followings_count)/float(folcount))*100.0)) + '%')
                 buffer_profile = extractProfile(client, item, shortversion = True)
                 #merge(followers_profile, buffer_profile)
-                r = comparePearson(buffer_profile, userprof)
+                r = compareCommonTracks(buffer_profile, userprof)
                 if r != 0:
                     merge(followers_profile, buffer_profile, r)
                 if(followings_count >= folcount): end_page = True
@@ -269,7 +269,7 @@ def profileFollowingsShort(client, user):
                 print('Progression: ' + str(int((float(followings_count)/float(folcount))*100.0)) + '%')
                 buffer_profile = extractProfile(client, item, shortversion = True, tracklimit=50, playlisting = False)
                 #merge(followers_profile, buffer_profile)
-                r = comparePearson(buffer_profile, userprof)
+                r = compareCommonTracks(buffer_profile, userprof)
                 if r != 0:
                     merge(followers_profile, buffer_profile, r)
                 if followings_count >= folcount :

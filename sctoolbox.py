@@ -19,6 +19,7 @@ def main(args):
         print >>sys.stderr, "sctoolbox searchTrack [trackname]"
         print >>sys.stderr, "sctoolbox getTrackScore [trackname]"
         print >>sys.stderr, "sctoolbox similar [trackname]"
+        print >>sys.stderr, "sctoolbox draw_style_galaxy [user] [jpg_path]"
 
     paths = []
 

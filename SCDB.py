@@ -388,3 +388,99 @@ def getSuggestions(profilename):
 
 ################################################################################
 '''
+
+################################################################################
+def getFollowerList(client, user):
+    followers = []
+    followers_href= 'users/' + str(user.id) + '/followers'
+    while (len(followers) < user.followers_count-50):
+        print('Downloading followers list: ' + str(len(followers)) + '/' + str(user.followers_count))
+        try:
+            followers_buffer = client.get( followers_href , limit=100, linked_partitioning=1 )
+        except:
+            print "Unexpected error:", sys.exc_info()[0]
+            continue
+        for follower in followers_buffer.collection: followers.append(follower)
+        followers_href = followers_buffer.next_href
+    print('Downloading followers list: ' + str(len(followers)) + '/' + str(user.followers_count))
+    print('Dowloading complete')
+    return followers
+################################################################################
+
+def getCommentsData(client, followers):
+    data = {}
+    usernames = []
+    labels = []
+    rownames = []
+    comments = []
+    comments_href = ''
+    taglist = {}
+    wordlist = {}
+    raw_data = []
+    usercount = 0
+    comlimit=100
+    print('Downloading comments and tags from followers...')
+    for user in followers:
+        comments_href = ('users/' + str(user.id) + '/comments')
+        download_complete = False
+        print('Advancement:'+str(usercount)+'/'+str(len(followers)))
+        data[user.username] = {}
+        cwordlist = []
+        comcount = 0
+        comlimit = 20
+        while not download_complete:
+            try:
+                comments_buffer = client.get(comments_href, limit=10, linked_partitioning=1)
+            except:
+                print "Unexpected error:", sys.exc_info()[0]
+                continue
+
+            for comment in comments_buffer.collection:
+                comcount += 1
+                try:
+                    track = client.get('tracks/' + str(comment.track_id) )
+                except:
+                    continue
+                tags = track.tag_list
+                listbuffer = tags.strip().split(' ')
+                ignore_next = False
+                processed = False
+                for i in range(0,len(listbuffer)-1):
+                    if ('"' in listbuffer[i]) and ('=' not in listbuffer[i]) and not ignore_next:
+                        completeword = listbuffer[i]
+                        currentword=listbuffer[i+1]
+                        while('"' not in currentword)
+                        cwordlist.append(completeword)
+                        ignore_next = True
+                        processed = True
+                    elif ('=' not in listbuffer[i]) and not ignore_next:
+                        cwordlist.append(listbuffer[i])
+                    elif ('"' in listbuffer[i]) and processed == False:
+                        ignore_next = False
+                    processed = False
+
+                for word in cwordlist:
+                    word = word.replace('"', "")
+                    word = word.replace(' ', "")
+                    if data[user.username].has_key(word): data[user.username][word]+=1
+                    else: data[user.username][word] = 1
+                    if wordlist.has_key(word): wordlist[word]+=1
+                    else: wordlist[word] = 1
+            if comcount >= comlimit: download_complete = True
+            if hasattr(comments_buffer, 'next_href'):
+                comments_href = comments_buffer.next_href
+            else:
+                download_complete = True
+
+        usercount += 1
+
+    for (key,value) in wordlist.items(): labels.append(key)
+    for (username, tags) in data.items():
+        rownames.append(username)
+        line = []
+        for label in labels:
+            if tags.has_key(label): line.append(tags[label])
+        else: line.append(0)
+        raw_data.append(line)
+
+    return rownames,labels,raw_data

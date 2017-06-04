@@ -21,6 +21,7 @@ def main(args):
         print >>sys.stderr, "sctoolbox getTrackScore [trackname]"
         print >>sys.stderr, "sctoolbox similar [trackname]"
         print >>sys.stderr, "sctoolbox draw_style_galaxy [user] [jpg_path]"
+        print >>sys.stderr, "sctoolbox draw_style_galaxy [user] [n] [jpg_path]"
 
     paths = []
 
@@ -137,7 +138,20 @@ def main(args):
         tagclust = clusters.hcluster(rotdata)
         print("Generationg dendrogram drawing...")
         clusters.drawdendrogram(tagclust,col,jpeg=args[3])
+    ##############################################################################
 
+    ##############################################################################
+elif len(args) == 5 and args[1] == 'draw_style_galaxy_kmeans':
+        print('Identifying user...')
+        user = SCDB.searchForUser(client, args[2])
+        print('Downloading followers list...')
+        followers_list = SCDB.getFollowerList(client, user)
+        row, col, data = SCDB.getCommentsData(client, followers_list)
+        print('Generating clusters...')
+        rotdata = clusters.rotatematrix(data)
+        tagclust = clusters.kcluster(rotdata, int(args[3]))
+        print("Generationg dendrogram drawing...")
+        clusters.drawdendrogram(tagclust,col,jpeg=args[4])
     ##############################################################################
 
     ##############################################################################

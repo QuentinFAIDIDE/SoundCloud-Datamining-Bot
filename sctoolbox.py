@@ -21,7 +21,7 @@ def main(args):
         print >>sys.stderr, "sctoolbox getTrackScore [trackname]"
         print >>sys.stderr, "sctoolbox similar [trackname]"
         print >>sys.stderr, "sctoolbox draw_style_galaxy [user] [jpg_path]"
-        print >>sys.stderr, "sctoolbox draw_style_galaxy [user] [n] [jpg_path]"
+        print >>sys.stderr, "sctoolbox draw_style_galaxy_kmeans [user] [n] [jpg_path]"
 
     paths = []
 
@@ -141,7 +141,7 @@ def main(args):
     ##############################################################################
 
     ##############################################################################
-elif len(args) == 5 and args[1] == 'draw_style_galaxy_kmeans':
+    elif len(args) == 5 and args[1] == 'draw_style_galaxy_kmeans':
         print('Identifying user...')
         user = SCDB.searchForUser(client, args[2])
         print('Downloading followers list...')

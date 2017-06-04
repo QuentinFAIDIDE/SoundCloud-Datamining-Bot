@@ -3,6 +3,7 @@
 import soundcloud
 import sys
 import operator
+import re
 from math import sqrt
 ################################################################################
 
@@ -419,7 +420,7 @@ def getCommentsData(client, followers):
     raw_data = []
     usercount = 0
     comlimit=20
-    taglimit=20
+    taglimit=5
     print('Downloading comments and tags from followers...')
     for user in followers:
         comments_href = ('users/' + str(user.id) + '/comments')

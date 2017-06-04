@@ -45,6 +45,7 @@ def hcluster(rows):
     clust=[bicluster(rows[i],id=i) for i in range(len(rows))]
 
     while len(clust)>1:
+        print('Distance untill the end:', str(len(clust)))
         lowestpair=(0,1)
         closest=pearson(clust[0].vec, clust[1].vec)
 
@@ -125,7 +126,7 @@ def drawnode(draw,clust,x,y,scaling,labels):
         drawnode(draw,clust.right,x+ll,bottom-h2/2,scaling,labels)
     else:
         # If this is an endpoint, draw the item label
-        draw.text((x+5,y-7),labels[clust.id],(0,0,0))
+        draw.text((x+5,y-7),labels[clust.id].encode('latin-1', 'replace'),(0,0,0))
 
 def rotatematrix(data):
     newdata=[]

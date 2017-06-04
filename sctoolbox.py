@@ -1,6 +1,7 @@
 import SCDB
 import sys
 import os
+import clusters
 import signal
 
 ###################################################################################################
@@ -122,6 +123,21 @@ def main(args):
             print('username:' + item.username)
             print('permalink:' + item.permalink)
         print('############################')
+    ##############################################################################
+
+    ##############################################################################
+    elif len(args) == 4 and args[1] == 'draw_style_galaxy':
+        print('Identifying user...')
+        user = SCDB.searchForUser(client, args[2])
+        print('Downloading followers list...')
+        followers_list = SCDB.getFollowerList(client, user)
+        row, col, data = SCDB.getCommentsData(client, followers_list)
+        print('Generating clusters...')
+        rotdata = clusters.rotatematrix(data)
+        tagclust = clusters.hcluster(rotdata)
+        print("Generationg dendrogram drawing...")
+        clusters.drawdendrogram(tagclust,col,jpeg=args[3])
+
     ##############################################################################
 
     ##############################################################################

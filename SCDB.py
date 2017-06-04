@@ -362,7 +362,7 @@ def getSuggestions(profilename):
 ################################################################################
 
 ################################################################################
-'''def getMostActiveUser(client, user):
+'''def getMostActiveUsers(client, user):
     n_user_tracks = user.track_count
     do_continue = True
     while do_continue and n_user_tracks != 0:
@@ -471,6 +471,10 @@ def getCommentsData(client, followers):
                 for word in cwordlist:
                     word = word.replace('"', "")
                     word = word.replace(' ', "")
+                    word = word.replace('#', "")
+                    word = word.replace('-', "")
+                    word = word.replace('.', "")
+                    word = word.replace('_', "")
                     if data[user.username].has_key(word): data[user.username][word]+=1
                     else: data[user.username][word] = 1
                     if wordlist.has_key(word): wordlist[word]+=1
@@ -482,7 +486,7 @@ def getCommentsData(client, followers):
                 download_complete = True
 
         usercount += 1
-
+    print('Advancement:'+str(usercount)+'/'+str(len(followers)))
     for (key,value) in wordlist.items(): labels.append(key)
     for (username, tags) in data.items():
         rownames.append(username)

@@ -418,7 +418,8 @@ def getCommentsData(client, followers):
     wordlist = {}
     raw_data = []
     usercount = 0
-    comlimit=100
+    comlimit=20
+    taglimit=20
     print('Downloading comments and tags from followers...')
     for user in followers:
         comments_href = ('users/' + str(user.id) + '/comments')
@@ -427,7 +428,6 @@ def getCommentsData(client, followers):
         data[user.username] = {}
         cwordlist = []
         comcount = 0
-        comlimit = 20
         while not download_complete:
             try:
                 comments_buffer = client.get(comments_href, limit=10, linked_partitioning=1)
@@ -445,19 +445,27 @@ def getCommentsData(client, followers):
                 listbuffer = tags.strip().split(' ')
                 ignore_next = False
                 processed = False
+                tagcount=0
                 for i in range(0,len(listbuffer)-1):
                     if ('"' in listbuffer[i]) and ('=' not in listbuffer[i]) and not ignore_next:
                         completeword = listbuffer[i]
                         currentword=listbuffer[i+1]
-                        while('"' not in currentword)
-                        cwordlist.append(completeword)
+                        num=1
+                        while('"' not in currentword):
+                            num+=1
+                            completeword = completeword + currentword
+                            currentword = listbuffer[i+num]
+                        tagcount +=1
+                        cwordlist.append(completeword.lower())
                         ignore_next = True
                         processed = True
                     elif ('=' not in listbuffer[i]) and not ignore_next:
-                        cwordlist.append(listbuffer[i])
+                        cwordlist.append(listbuffer[i].lower())
+                        tagcount +=1
                     elif ('"' in listbuffer[i]) and processed == False:
                         ignore_next = False
                     processed = False
+                    if(tagcount >= taglimit): break
 
                 for word in cwordlist:
                     word = word.replace('"', "")
@@ -480,7 +488,7 @@ def getCommentsData(client, followers):
         line = []
         for label in labels:
             if tags.has_key(label): line.append(tags[label])
-        else: line.append(0)
+            else: line.append(0)
         raw_data.append(line)
 
     return rownames,labels,raw_data

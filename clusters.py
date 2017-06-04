@@ -32,30 +32,30 @@ def readfile(filename):
 
 
 class bicluster:
-    def __init__(self,vec,left=None,right=None,distance=0.0,id=None):
+    def __init__(self,vec,left=None,right=None,pearson=0.0,id=None):
         self.left=left
         self.right=right
         self.vec=vec
         self.id=id
-        self.distance=distance
+        self.pearson=pearson
 
 def hcluster(rows):
-    distances={}
+    pearsons={}
     currentclustid=-1
 
     clust=[bicluster(rows[i],id=i) for i in range(len(rows))]
 
     while len(clust)>1:
-        print('Distance untill the end:', str(len(clust)))
+        print('pearson untill the end:', str(len(clust)))
         lowestpair=(0,1)
         closest=pearson(clust[0].vec, clust[1].vec)
 
         for i in range(len(clust)):
             for j in range(i+1,len(clust)):
-                if (clust[i].id,clust[j].id) not in distances:
-                    distances[(clust[i].id, clust[j].id)]=pearson(clust[i].vec, clust[j].vec)
+                if (clust[i].id,clust[j].id) not in pearsons:
+                    pearsons[(clust[i].id, clust[j].id)]=pearson(clust[i].vec, clust[j].vec)
 
-                d=distances[(clust[i].id, clust[j].id)]
+                d=pearsons[(clust[i].id, clust[j].id)]
 
                 if d<closest:
                     closest=d
@@ -67,7 +67,7 @@ def hcluster(rows):
 
         newcluster = bicluster(mergevec,left=clust[lowestpair[0]],
                                right=clust[lowestpair[1]],
-                               distance=closest, id=currentclustid)
+                               pearson=closest, id=currentclustid)
 
         currentclustid-=1
         del clust[lowestpair[1]]
@@ -91,14 +91,14 @@ def getheight(clust):
 
 def getdepth(clust):
     if clust.left==None and clust.right==None: return 0
-    return max(getdepth(clust.left), getdepth(clust.right))+clust.distance
+    return max(getdepth(clust.left), getdepth(clust.right))+clust.pearson
 
 def drawdendrogram(clust,labels,jpeg='clusters.jpg'):
     # height and width
     h=getheight(clust)*20
     w=1200
     depth=getdepth(clust)
-    # width is fixed, so scale distances accordingly
+    # width is fixed, so scale pearsons accordingly
     scaling=float(w-150)/depth
     # Create a new image with a white background
     img=Image.new('RGB',(w,h),(255,255,255))
@@ -115,7 +115,7 @@ def drawnode(draw,clust,x,y,scaling,labels):
         top=y-(h1+h2)/2
         bottom=y+(h1+h2)/2
         # Line length
-        ll=clust.distance*scaling
+        ll=clust.pearson*scaling
         # Vertical line from this cluster to children
         draw.line((x,top+h1/2,x,bottom-h2/2),fill=(255,0,0))
         # Horizontal line to left item
@@ -152,8 +152,8 @@ def kcluster(rows,k=4):
             row=rows[j]
             bestmatch=0
             for i in range(k):
-                d=distance(clusters[i],row)
-                if d<distance(clusters[bestmatch],row): bestmatch=i
+                d=pearson(clusters[i],row)
+                if d<pearson(clusters[bestmatch],row): bestmatch=i
             bestmatches[bestmatch].append(j)
         # If the results are the same as last time, this is complete
         if bestmatches==lastmatches: break

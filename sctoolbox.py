@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import SCDB
 import sys
 import os
@@ -10,18 +12,18 @@ def main(args):
         print >>sys.stderr, "Usage:"
         print >>sys.stderr, "sctoolbox correlates common_tracks [user1] [user2]"
         print >>sys.stderr, "sctoolbox correlates pearson_tastes [user1] [user2]"
+        print >>sys.stderr, "sctoolbox suggest [user] bestlikes [n]"
         print >>sys.stderr, "sctoolbox suggest [user] following_tournament [n]"
         print >>sys.stderr, "sctoolbox suggest [user] following_tournament_short [n]"
         print >>sys.stderr, "sctoolbox suggest [user] following_tournament [n] --nomix"
         print >>sys.stderr, "sctoolbox suggest [user] following_tournament_short [n] --nomix"
-        print >>sys.stderr, "sctoolbox suggest [user] following_tournament_custom [n] --nomix [playlimit]"
-        print >>sys.stderr, "sctoolbox suggest [user] following_tournament_custom [n] [playlimit]"
+        print >>sys.stderr, "sctoolbox suggest [user] following_tournament_playlimit [n] --nomix [playlimit]"
+        print >>sys.stderr, "sctoolbox suggest [user] following_tournament_playlimit [n] [playlimit]"
         print >>sys.stderr, "sctoolbox searchUser [username]"
         print >>sys.stderr, "sctoolbox searchTrack [trackname]"
         print >>sys.stderr, "sctoolbox getTrackScore [trackname]"
         print >>sys.stderr, "sctoolbox similar [trackname]"
         print >>sys.stderr, "sctoolbox draw_style_galaxy [user] [jpg_path]"
-        print >>sys.stderr, "sctoolbox draw_style_galaxy_kmeans [user] [n] [jpg_path]"
 
     paths = []
 
@@ -64,6 +66,16 @@ def main(args):
     ##############################################################################
 
     ##############################################################################
+    elif len(args) == 5 and args[1] == 'suggest' and args[3] == 'bestlikes':
+        print('Rating tracks user liked, reposted, or commented, and playlisted, might take a while...')
+        user = SCDB.searchForUser(client, args[2])
+        profile = SCDB.sortProfileFromFollowings(client, user)
+        suggestions = SCDB.getSuggestionsFromProfile(client, profile, int(args[4]))
+        print(args[2] + " best likes are:")
+        for item in suggestions: print item
+    ##############################################################################
+
+    ##############################################################################
     elif len(args) == 5 and args[1] == 'suggest' and args[3] == 'following_tournament_short':
         print('Launching short tournament between tracks from followings...')
         user = SCDB.searchForUser(client, args[2])
@@ -88,13 +100,14 @@ def main(args):
         print('Launching short tournament between tracks from followings...')
         user = SCDB.searchForUser(client, args[2])
         profile = SCDB.profileFollowingsShort(client, user)
+        print('Generating big profile...')
         suggestions = SCDB.getSuggestionsFromProfile(client, profile, int(args[4]), no_mix=True)
         print(args[2] + " should like these tracks:")
         for item in suggestions: print item
     ##############################################################################
 
     ##############################################################################
-    elif len(args) == 7 and args[1] == 'suggest' and args[3] == 'following_tournament_custom' and args[5] == '--nomix':
+    elif len(args) == 7 and args[1] == 'suggest' and args[3] == 'following_tournament_playlimit' and args[5] == '--nomix':
         print('Launching custom tournament between tracks from followings...')
         user = SCDB.searchForUser(client, args[2])
         profile = SCDB.profileFollowings(client, user)
@@ -104,7 +117,7 @@ def main(args):
     ##############################################################################
 
     ##############################################################################
-    elif len(args) == 6 and args[1] == 'suggest' and args[3] == 'following_tournament_custom':
+    elif len(args) == 6 and args[1] == 'suggest' and args[3] == ' following_tournament_playlimit ':
         print('Launching custom tournament between tracks from followings...')
         user = SCDB.searchForUser(client, args[2])
         profile = SCDB.profileFollowings(client, user)
@@ -132,26 +145,13 @@ def main(args):
         user = SCDB.searchForUser(client, args[2])
         print('Downloading followers list...')
         followers_list = SCDB.getFollowerList(client, user)
+        followers_list = SCDB.exctractsample(followers_list)
         row, col, data = SCDB.getCommentsData(client, followers_list)
         print('Generating clusters...')
         rotdata = clusters.rotatematrix(data)
         tagclust = clusters.hcluster(rotdata)
         print("Generationg dendrogram drawing...")
         clusters.drawdendrogram(tagclust,col,jpeg=args[3])
-    ##############################################################################
-
-    ##############################################################################
-    elif len(args) == 5 and args[1] == 'draw_style_galaxy_kmeans':
-        print('Identifying user...')
-        user = SCDB.searchForUser(client, args[2])
-        print('Downloading followers list...')
-        followers_list = SCDB.getFollowerList(client, user)
-        row, col, data = SCDB.getCommentsData(client, followers_list)
-        print('Generating clusters...')
-        rotdata = clusters.rotatematrix(data)
-        tagclust = clusters.kcluster(rotdata, int(args[3]))
-        print("Generationg dendrogram drawing...")
-        clusters.drawdendrogram(tagclust,col,jpeg=args[4])
     ##############################################################################
 
     ##############################################################################

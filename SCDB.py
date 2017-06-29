@@ -4,6 +4,7 @@ import soundcloud
 import sys
 import operator
 import re
+import random
 from math import sqrt
 ################################################################################
 
@@ -33,6 +34,7 @@ def extractProfile(client, user, shortversion = False, custom_profile=None, trac
     likes_href = ('users/' + str(user.id) + '/favorites' )
     comments_href = ('users/' + str(user.id) + '/comments' )
     playlists_href = ('users/' + str(user.id) + '/playlists' )
+    repost_href = ('https://api-v2.soundcloud.com/profile/soundcloud:users:' + str(user.id) + '?limit=10')
     if playlisting == False:
         playlists_href = 'stop'
     reposted_done = False
@@ -40,11 +42,11 @@ def extractProfile(client, user, shortversion = False, custom_profile=None, trac
     print("Profiling " + user.username)
 
     while(not end_page):
-        #querying all data
+        #querying all the data
         if likes_href != 'stop':
             while True:
                 try:
-                    likes = client.get( likes_href , limit=100, linked_partitioning=1 )
+                    likes = client.get( likes_href , limit=50, linked_partitioning=1 )
                 except:
                     print "Unexpected error:", sys.exc_info()[0]
                     continue
@@ -57,7 +59,7 @@ def extractProfile(client, user, shortversion = False, custom_profile=None, trac
         if comments_href != 'stop':
             while True:
                 try:
-                    comments = client.get( comments_href , limit=100, linked_partitioning=1 )
+                    comments = client.get( comments_href , limit=50, linked_partitioning=1 )
                 except:
                     print "Unexpected error:", sys.exc_info()[0]
                     continue
@@ -70,7 +72,7 @@ def extractProfile(client, user, shortversion = False, custom_profile=None, trac
         if playlists_href != 'stop':
             while True:
                 try:
-                    playlists = client.get(playlists_href , limit=100, linked_partitioning=1 )
+                    playlists = client.get(playlists_href , limit=50, linked_partitioning=1 )
                     failcount = 0
                     if hasattr(playlists, 'next_href'):
                         playlists_href = playlists.next_href
@@ -91,12 +93,16 @@ def extractProfile(client, user, shortversion = False, custom_profile=None, trac
                 try:
                     reposts = client.get((
                                 'https://api-v2.soundcloud.com/profile/soundcloud:users:'
-                                + str(user.id) + '?limit=100'))
+                                + str(user.id) + '?limit=10'))
                 except:
                     print "Unexpected error:", sys.exc_info()[0]
                     continue
                 break
-
+                if hasattr(reposts, 'next_href'):
+                    repost_href = reposts.next_href
+                else:
+                    repost_href = 'stop'
+                    resposted_done = True
 
         if(reposted_done and likes_href == 'stop' and playlists_href == 'stop' and comments_href == 'stop'):
             end_page = True
@@ -104,7 +110,7 @@ def extractProfile(client, user, shortversion = False, custom_profile=None, trac
 
 
         #processing playlists to extract tracks who are not from user
-        if end_page == False and playlists_href != 'stop' :
+        if playlists_href != 'stop' :
             for playlist in playlists.collection:
                 for track in playlist.tracks:
                     if track['user_id'] != user.id:
@@ -115,7 +121,7 @@ def extractProfile(client, user, shortversion = False, custom_profile=None, trac
                                 profile[str(track['id'])] = 2.0
 
         #processing all reposts to extract tracks who are not from user
-        if (not reposted_done) and end_page == False:
+        if (not reposted_done):
             for tracks in reposts.collection:
                 if hasattr(tracks, 'track'):
                     if user.username.lower() not in tracks.track['title'].lower():
@@ -127,7 +133,7 @@ def extractProfile(client, user, shortversion = False, custom_profile=None, trac
 
         #processing all comments to get the tracks user commented
         #checking as always if they are not from him
-        if comments_href != 'stop' and end_page == False:
+        if comments_href != 'stop':
             for comment in comments.collection:
                 if profile.has_key(str(comment.track_id)):
                     profile[str(comment.track_id)] += 2.0
@@ -135,7 +141,7 @@ def extractProfile(client, user, shortversion = False, custom_profile=None, trac
                     profile[str(comment.track_id)] = 2.0
 
         #processing all likes to extract tracks who are not from user
-        if end_page == False and likes_href != 'stop':
+        if likes_href != 'stop':
                 for tracks in likes.collection:
                     if user.username.lower() not in tracks.title.lower():
                         if profile.has_key(str(tracks.id)):
@@ -229,7 +235,7 @@ def profileFollowings(client, user):
                 #merge(followers_profile, buffer_profile)
                 r = compareCommonTracks(buffer_profile, userprof)
                 if r != 0:
-                    merge(followers_profile, buffer_profile, r)
+                    merge(followers_profile, buffer_profile, r*r)
                 if(followings_count >= folcount): end_page = True
 
     return followers_profile
@@ -241,7 +247,8 @@ def profileFollowingsShort(client, user):
     follow_href = ('users/' + str(user.id) + '/followings' )
     followers_profile = {}
     followings_count = 0
-    userprof = extractProfile(client, user)
+    finalcollection = []
+    userprof = extractProfile(client, user, shortversion= True, tracklimit=200)
     cor = 0.0
     failcount = 0
     r = 0
@@ -251,7 +258,57 @@ def profileFollowingsShort(client, user):
     while end_page==False:
         while end_page==False:
             try:
-                followings = client.get(follow_href, limit=50, linked_partitioning=1 )
+                followings = client.get(follow_href, limit=90, linked_partitioning=1 )
+                failcount = 0
+            except:
+                failcount += 1
+                if failcount >5:
+                    break
+                continue
+            break
+        #followings_count += 100
+        if hasattr(followings, 'next_href'):
+            if followings.next_href != None:
+                follow_href = followings.next_href
+            else:
+                end_page = True
+        else:
+            end_page = True
+        [finalcollection.append(user) for user in followings.collection.data]
+        if(len(finalcollection)>=folcount): break
+    finalcollection = exctractsample(finalcollection)
+    folcount = len(finalcollection)
+    print(folcount)
+    followings_count = 0
+    for item in finalcollection:
+        followings_count +=1
+        print('Progression: ' + str(int((float(followings_count)/float(folcount))*100.0)) + '%')
+        buffer_profile = extractProfile(client, item, shortversion = True, tracklimit=75, playlisting = False)
+        #merge(followers_profile, buffer_profile)
+        r = compareCommonTracks(buffer_profile, userprof)
+        if r != 0:
+            merge(followers_profile, buffer_profile, r)
+
+    return followers_profile
+################################################################################
+
+################################################################################
+def sortProfileFromFollowings(client, user):
+    end_page = False
+    follow_href = ('users/' + str(user.id) + '/followings' )
+    followers_profile = {}
+    followings_count = 0
+    userprof = extractProfile(client, user)
+    cor = 0.0
+    failcount = 0
+    r= 0.0
+    folcount = user.followings_count
+    if folcount > 1000: folcount = 1000
+    if folcount == 0: end_page = True
+    while not end_page:
+        while True:
+            try:
+                followings = client.get(follow_href, limit=100, linked_partitioning=1 )
                 failcount = 0
             except:
                 failcount += 1
@@ -262,19 +319,17 @@ def profileFollowingsShort(client, user):
         #followings_count += 100
         if hasattr(followings, 'next_href'):
             follow_href = followings.next_href
-        else:
-            end_page = True
+
         for item in followings.collection:
             if end_page == False:
                 followings_count +=1
                 print('Progression: ' + str(int((float(followings_count)/float(folcount))*100.0)) + '%')
-                buffer_profile = extractProfile(client, item, shortversion = True, tracklimit=50, playlisting = False)
+                buffer_profile = extractProfile(client, item, shortversion = True)
                 #merge(followers_profile, buffer_profile)
                 r = compareCommonTracks(buffer_profile, userprof)
                 if r != 0:
-                    merge(followers_profile, buffer_profile, r)
-                if followings_count >= folcount :
-                    end_page = True
+                    merge(followers_profile, buffer_profile, r*r)
+                if(followings_count >= folcount): end_page = True
 
     return followers_profile
 ################################################################################
@@ -289,6 +344,13 @@ def merge(p1, p2, r=1):
 ################################################################################
 
 ################################################################################
+def mergeExisting(p1, p2, r=1):
+    for key in p2:
+        if p1.has_key(key):
+            p1[key] += p2[key]*r
+################################################################################
+
+################################################################################
 def linkFromId(client, id, no_mix=False, played_limit = 1000000):
     try:
         track = client.get('tracks/' + id )
@@ -299,11 +361,14 @@ def linkFromId(client, id, no_mix=False, played_limit = 1000000):
     if (track.duration > 900000 and no_mix):
         return 'None'
 
-    if hasattr(track, 'playback_count') and no_mix:
-        if (track.playback_count > played_limit):
+    if no_mix:
+        if hasattr(track, 'playback_count'):
+            if (track.playback_count > played_limit):
+                return 'None'
+        else:
+            print('Ignored a track with no playback count')
             return 'None'
-    else:
-        return 'None'
+
     return track.permalink_url
 ################################################################################
 
@@ -331,7 +396,7 @@ def getSuggestionsFromProfile(client, profile, n=20, no_mix=False, played_limit 
     name = ''
     count = 0
     fakecount = 0
-    while fakecount != n :
+    while fakecount != n and size != 0:
         name = linkFromId(client, sorted_tuples[size-1-count][0], no_mix, played_limit)
         if name != 'None':
             listOfLinks.append(name)
@@ -497,3 +562,18 @@ def getCommentsData(client, followers):
         raw_data.append(line)
 
     return rownames,labels,raw_data
+
+def exctractsample(followers):
+    sample = []
+    representativesamplesize = int(len(followers)*0.5)
+
+    print('%s\n%s' % (len(followers), representativesamplesize))
+    for i in range(representativesamplesize):
+        if len(followers) != 1 :
+            samplerand = random.randint(0,len(followers)-1)
+            sample.append(followers[samplerand])
+            followers.pop(samplerand)
+        else:
+            sample.append(followers[0])
+
+    return sample
